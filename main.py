@@ -287,10 +287,6 @@ def create_dynamic_interface():
                 send_btn = ttk.Button(dynamic_frame, text="✉ Enviar esta pregunta al Chat", 
                                      command=send_current_question_to_chat)
                 send_btn.pack(pady=(0,6), fill="x")
-                
-                # Botón para generar más preguntas
-                cont = ttk.Button(dynamic_frame, text="➕ Generar más preguntas relacionadas", command=generate_more_questions)
-                cont.pack(pady=(0,3), fill="x")
             else:
                 # Mensaje si no hay selección
                 tk.Label(dynamic_frame, text="👆 Selecciona una pregunta arriba", 
@@ -812,4 +808,4 @@ create_dynamic_interface()
 try:
     root.mainloop()
 except Exception as e:
-    print("Error en mainloop:", e)
+    print("Error mainloop:", e)
