@@ -1,5 +1,6 @@
-import tkinter as tk
-from tkinter import ttk, scrolledtext, IntVar, messagebox, Listbox
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from tkinter import IntVar, messagebox, Listbox
 import threading
 import time
 import random
@@ -19,7 +20,7 @@ except Exception:
 
 # --------- CARGA DE API KEY ----------
 # OPCIÓN 1: Poner tu API key directamente aquí (recomendado para testing)
-GROQ_API_KEY = " "  # <-- Pon tu API key aquí
+GROQ_API_KEY = ""  # <-- Pon tu API key aquí
 
 # OPCIÓN 2: Leer desde archivo key.ini (comentar OPCIÓN 1 si usas esta)
 # try:
@@ -70,66 +71,55 @@ class MockUnicorn:
     def read_eeg(self): return [random.random() for _ in range(8)]
 unicorn = MockUnicorn()
 
-# --------- GUI ----------
-root = tk.Tk()
-root.title("BCI Chat Interface with Groq - Hackathon")
-root.geometry("900x720")
-root.configure(bg="#2E2E2E")
-
-style = ttk.Style()
-try:
-    style.theme_use("clam")
-    style.configure("TButton", font=("Arial", 11, "bold"), padding=6)
-    style.configure("TLabel", font=("Arial", 12), background="#2E2E2E", foreground="white")
-    style.configure("TRadiobutton", font=("Arial", 11), background="#2E2E2E", foreground="white")
-    style.configure("TCheckbutton", font=("Arial", 11), background="#2E2E2E", foreground="white")
-    style.configure("TScrollbar", background="#2E2E2E", troughcolor="#1E1E1E", arrowcolor="white")
-except Exception as e:
-    print(f"Style setup error: {e}")
+# --------- GUI con ttkbootstrap ----------
+app = tb.Window(themename="darkly")
+app.title("BCI Chat Interface with Groq - Hackathon")
+app.geometry("900x720")
+app.minsize(900, 600)
 
 # Layout: left = console, right = controls
-left_frame = tk.Frame(root, bg="#2E2E2E")
-left_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
+left_frame = tb.Frame(app)
+left_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=8, pady=8)
 
-right_frame = tk.Frame(root, width=360, bg="#2E2E2E")
-right_frame.pack(side="right", fill="y", padx=8, pady=8)
+right_frame = tb.Frame(app, width=360)
+right_frame.pack(side=RIGHT, fill=Y, padx=8, pady=8)
 
 # Chat display
-chat_display = scrolledtext.ScrolledText(left_frame, width=60, height=40, font=("Arial", 11), bg="#111111", fg="white", insertbackground="white")
-chat_display.pack(fill="both", expand=True)
+chat_display = tb.Text(left_frame, width=60, height=40, font=("Arial", 11), wrap=WORD, insertbackground="white")
+chat_display.pack(fill=BOTH, expand=True)
+chat_display.tag_configure("user", foreground="#4CAF50")
+chat_display.tag_configure("ai", foreground="#BBBBBB")
 
 # Controls on right
-ttk.Label(right_frame, text="Modo:").pack(anchor="w", pady=(4,0))
+tb.Label(right_frame, text="Modo:").pack(anchor="w", pady=(4,0))
 mode_var = IntVar(value=0)
-ttk.Radiobutton(right_frame, text="Speller (teclear letra)", variable=mode_var, value=0, command=lambda: switch_mode()).pack(anchor="w")
-ttk.Radiobutton(right_frame, text="Graph (sugerencias)", variable=mode_var, value=1, command=lambda: switch_mode()).pack(anchor="w")
+tb.Radiobutton(right_frame, text="Speller (teclear letra)", variable=mode_var, value=0, command=lambda: switch_mode()).pack(anchor="w")
+tb.Radiobutton(right_frame, text="Graph (sugerencias)", variable=mode_var, value=1, command=lambda: switch_mode()).pack(anchor="w")
 
 debug_var = IntVar(value=1)
-ttk.Checkbutton(right_frame, text="Debug (simulación clics)", variable=debug_var, command=lambda: toggle_debug()).pack(fill="x", pady=6)
+tb.Checkbutton(right_frame, text="Debug (simulación clics)", variable=debug_var, command=lambda: toggle_debug()).pack(fill=X, pady=6)
 
 # API Key configuration
-api_frame = tk.LabelFrame(right_frame, text="Configuración API", bg="#2E2E2E", fg="white")
-api_frame.pack(fill="x", pady=6)
+api_frame = tb.Labelframe(right_frame, text="Configuración API")
+api_frame.pack(fill=X, pady=6)
 
-api_status = ttk.Label(api_frame, text="API: No configurada" if not client else "API: ✓ Conectada", 
-                       foreground="red" if not client else "green", background="#2E2E2E")
+api_status = tb.Label(api_frame, text="API: No configurada" if not client else "API: ✓ Conectada", 
+                      bootstyle=DANGER if not client else SUCCESS)
 api_status.pack(pady=4)
 
 def open_api_config():
-    api_window = tk.Toplevel(root)
+    api_window = tb.Toplevel(app)
     api_window.title("Configurar API Key de Groq")
     api_window.geometry("500x250")
-    api_window.configure(bg="#2E2E2E")
     
-    tk.Label(api_window, text="Ingresa tu API Key de Groq:", 
-             bg="#2E2E2E", fg="white", font=("Arial", 12)).pack(pady=10)
+    tb.Label(api_window, text="Ingresa tu API Key de Groq:", font=("Arial", 12)).pack(pady=10)
     
-    api_entry = ttk.Entry(api_window, width=50, font=("Arial", 10))
+    api_entry = tb.Entry(api_window, width=50, font=("Arial", 10))
     api_entry.pack(pady=10)
     api_entry.insert(0, GROQ_API_KEY if GROQ_API_KEY else "")
     
-    tk.Label(api_window, text="Obtén tu API key gratuita en:\nhttps://console.groq.com/keys", 
-             bg="#2E2E2E", fg="#4CAF50", font=("Arial", 9)).pack(pady=5)
+    tb.Label(api_window, text="Obtén tu API key gratuita en:\nhttps://console.groq.com/keys", 
+             bootstyle=SUCCESS, font=("Arial", 9)).pack(pady=5)
     
     def save_api_key():
         global GROQ_API_KEY, client
@@ -144,7 +134,7 @@ def open_api_config():
         try:
             if Groq is not None:
                 client = Groq(api_key=GROQ_API_KEY)
-                api_status.config(text="API: ✓ Conectada", foreground="green")
+                api_status.config(text="API: ✓ Conectada", bootstyle=SUCCESS)
                 messagebox.showinfo("Éxito", "API Key configurada correctamente")
                 api_window.destroy()
             else:
@@ -152,44 +142,44 @@ def open_api_config():
         except Exception as e:
             messagebox.showerror("Error", f"Error al conectar con Groq:\n{e}")
     
-    ttk.Button(api_window, text="Guardar y Conectar", command=save_api_key).pack(pady=10)
-    ttk.Button(api_window, text="Cancelar", command=api_window.destroy).pack()
+    tb.Button(api_window, text="Guardar y Conectar", bootstyle=SUCCESS, command=save_api_key).pack(pady=10)
+    tb.Button(api_window, text="Cancelar", bootstyle=SECONDARY, command=api_window.destroy).pack()
 
-ttk.Button(api_frame, text="Configurar API Key", command=open_api_config).pack(pady=4)
+tb.Button(api_frame, text="Configurar API Key", bootstyle=PRIMARY, command=open_api_config).pack(pady=4)
 
-ttk.Label(right_frame, text="Palabra clave / Concepto (keywords separadas por comas):").pack(anchor="w")
-prompt_text = ttk.Entry(right_frame, width=40, font=("Arial", 12))
+tb.Label(right_frame, text="Palabra clave / Concepto (keywords separadas por comas):").pack(anchor="w")
+prompt_text = tb.Entry(right_frame, width=40, font=("Arial", 12))
 prompt_text.pack(pady=6)
 prompt_text.bind("<KeyRelease>", lambda e: suggest_auto_completion())
 
 # Auto-completion listbox
 suggestion_list = Listbox(right_frame, height=5, font=("Arial", 10), bg="#1E1E1E", fg="white")
-suggestion_list.pack(fill="x", pady=2)
+suggestion_list.pack(fill=X, pady=2)
 suggestion_list.bind("<<ListboxSelect>>", lambda e: select_suggestion(e))
 suggestion_list.pack_forget()
 
-# Common suggestions client-side (mejoradas)
+# Common suggestions client-side
 common_suggestions = [
     "quién","qué","cómo","cuándo","dónde","por qué","AI","cuidados","salud","educación","finanzas",
     "blockchain","criptomonedas","marriage","sexo","adicciones","volcanes","física","biología"
 ]
 
 # Dynamic area (para el grid / opciones)
-dynamic_frame = tk.Frame(right_frame, bg="#2E2E2E")
-dynamic_frame.pack(fill="both", expand=False, pady=8)
+dynamic_frame = tb.Frame(right_frame)
+dynamic_frame.pack(fill=BOTH, expand=False, pady=8)
 
 # Buttons
-control_frame = tk.Frame(right_frame, bg="#2E2E2E")
-control_frame.pack(fill="x", pady=4)
-start_button = ttk.Button(control_frame, text="Start Interface", command=lambda: start_interface())
-start_button.pack(side="left", padx=4)
-submit_button = ttk.Button(control_frame, text="Generar Preguntas", command=lambda: on_generate_questions())
-submit_button.pack(side="left", padx=4)
-reset_button = ttk.Button(control_frame, text="Reset", command=lambda: reset_all())
-reset_button.pack(side="left", padx=4)
+control_frame = tb.Frame(right_frame)
+control_frame.pack(fill=X, pady=4)
+start_button = tb.Button(control_frame, text="Start Interface", bootstyle=SUCCESS, command=lambda: start_interface())
+start_button.pack(side=LEFT, padx=4)
+submit_button = tb.Button(control_frame, text="Generar Preguntas", bootstyle=INFO, command=lambda: on_generate_questions())
+submit_button.pack(side=LEFT, padx=4)
+reset_button = tb.Button(control_frame, text="Reset", bootstyle=DANGER, command=lambda: reset_all())
+reset_button.pack(side=LEFT, padx=4)
 
-status_label = ttk.Label(right_frame, text="Status: Listo (Debug)", style="TLabel", anchor="w")
-status_label.pack(fill="x", pady=(8,0))
+status_label = tb.Label(right_frame, text="Status: Listo (Debug)", anchor=W)
+status_label.pack(fill=X, pady=(8,0))
 
 # ----------------- Funciones de UI y flujo -----------------
 def update_status(text):
@@ -223,81 +213,77 @@ def create_dynamic_interface():
         # un grid pequeño con letras (para debug)
         rows, cols = 5, 8
         for i in range(rows):
-            rowframe = tk.Frame(dynamic_frame, bg="#2E2E2E")
+            rowframe = tb.Frame(dynamic_frame)
             rowframe.pack()
             for j in range(cols):
                 idx = i*cols + j
                 if idx < len(alphabet):
                     ch = alphabet[idx]
-                    b = ttk.Button(rowframe, text=ch, width=3, command=(lambda c=ch: process_selection(c)) if debug_mode else None)
-                    b.pack(side="left", padx=1, pady=1)
+                    b = tb.Button(rowframe, text=ch, width=3, bootstyle=SECONDARY, command=(lambda c=ch: process_selection(c)) if debug_mode else None)
+                    b.pack(side=LEFT, padx=1, pady=1)
                     buttons.append(b)
     else:
         # Mostrar ruta (breadcrumb)
-        breadcrumb_label = tk.Label(dynamic_frame, text=f"📍 Ruta: {' > '.join(breadcrumb_trail)}", 
-                                    bg="#2E2E2E", fg="#4CAF50", font=("Arial", 10, "bold"))
+        breadcrumb_label = tb.Label(dynamic_frame, text=f"📍 Ruta: {' > '.join(breadcrumb_trail)}", 
+                                   bootstyle=SUCCESS, font=("Arial", 10, "bold"))
         breadcrumb_label.pack(anchor="w", pady=(0,8))
         
         # Obtener opciones del nodo ROOT, no del nodo actual
         root_opts = decision_tree["root"].get("options", [])
         
         if not root_opts:
-            tk.Label(dynamic_frame, text="❌ No hay preguntas generadas", 
-                    bg="#2E2E2E", fg="#FF5555", font=("Arial", 11, "bold")).pack(anchor="w", pady=4)
-            tk.Label(dynamic_frame, text="Introduce palabras clave arriba y\npulsa 'Generar Preguntas'", 
-                    bg="#2E2E2E", fg="#BBBBBB", font=("Arial", 10), justify="left").pack(anchor="w", pady=2)
+            tb.Label(dynamic_frame, text="❌ No hay preguntas generadas", 
+                     bootstyle=DANGER, font=("Arial", 11, "bold")).pack(anchor="w", pady=4)
+            tb.Label(dynamic_frame, text="Introduce palabras clave arriba y\npulsa 'Generar Preguntas'", 
+                     bootstyle=SECONDARY, font=("Arial", 10), justify="left").pack(anchor="w", pady=2)
         else:
             # Instrucción
             instruction_text = "Haz clic en una pregunta para seleccionarla"
-            tk.Label(dynamic_frame, text=instruction_text, 
-                    bg="#2E2E2E", fg="#FFEB3B", font=("Arial", 9), wraplength=320, justify="left").pack(anchor="w", pady=(0,8))
+            tb.Label(dynamic_frame, text=instruction_text, 
+                     bootstyle=WARNING, font=("Arial", 9), wraplength=320, justify="left").pack(anchor="w", pady=(0,8))
             
             # Mostrar preguntas del ROOT (las generadas inicialmente)
             for opt in root_opts:
                 # Resaltar la pregunta si está seleccionada
                 is_selected = (len(breadcrumb_trail) > 1 and breadcrumb_trail[-1] == opt)
                 
-                btn_style = ttk.Style()
-                if is_selected:
-                    b = ttk.Button(dynamic_frame, text=f"✓ {opt}", width=45, 
-                                  command=(lambda o=opt: process_selection(o)) if debug_mode else None)
-                else:
-                    b = ttk.Button(dynamic_frame, text=opt, width=45, 
-                                  command=(lambda o=opt: process_selection(o)) if debug_mode else None)
+                b = tb.Button(dynamic_frame, text=f"✓ {opt}" if is_selected else opt, width=45, 
+                              bootstyle=SUCCESS if is_selected else PRIMARY,
+                              command=(lambda o=opt: process_selection(o)) if debug_mode else None)
                 b.pack(pady=2)
                 buttons.append(b)
             
             # Separador
-            tk.Frame(dynamic_frame, height=2, bg="#555555").pack(fill="x", pady=8)
+            tb.Frame(dynamic_frame, height=2, bootstyle="dark").pack(fill=X, pady=8)
             
             # Mostrar sección de acciones solo si hay algo seleccionado
             if len(breadcrumb_trail) > 1:
                 selected_text = breadcrumb_trail[-1]
                 
                 # Mostrar selección actual
-                selection_frame = tk.Frame(dynamic_frame, bg="#1E1E1E", relief="groove", borderwidth=2)
-                selection_frame.pack(fill="x", pady=(0,8), padx=4)
+                selection_frame = tb.Frame(dynamic_frame, bootstyle="dark", relief="groove", borderwidth=2)
+                selection_frame.pack(fill=X, pady=(0,8), padx=4)
                 
-                tk.Label(selection_frame, text="Pregunta seleccionada:", 
-                        bg="#1E1E1E", fg="#4CAF50", font=("Arial", 9, "bold")).pack(anchor="w", padx=8, pady=(6,2))
-                tk.Label(selection_frame, text=f'"{selected_text}"', 
-                        bg="#1E1E1E", fg="white", font=("Arial", 9), wraplength=300, justify="left").pack(anchor="w", padx=8, pady=(0,6))
+                tb.Label(selection_frame, text="Pregunta seleccionada:", 
+                         bootstyle=SUCCESS, font=("Arial", 9, "bold")).pack(anchor="w", padx=8, pady=(6,2))
+                tb.Label(selection_frame, text=f'"{selected_text}"', 
+                         bootstyle="light", font=("Arial", 9), wraplength=300, justify="left").pack(anchor="w", padx=8, pady=(0,6))
                 
                 # Botón para enviar la selección actual al chat
-                send_btn = ttk.Button(dynamic_frame, text="✉ Enviar esta pregunta al Chat", 
-                                     command=send_current_question_to_chat)
-                send_btn.pack(pady=(0,6), fill="x")
+                send_btn = tb.Button(dynamic_frame, text="✉ Enviar esta pregunta al Chat", 
+                                    bootstyle=PRIMARY, command=send_current_question_to_chat)
+                send_btn.pack(pady=(0,6), fill=X)
             else:
                 # Mensaje si no hay selección
-                tk.Label(dynamic_frame, text="👆 Selecciona una pregunta arriba", 
-                        bg="#2E2E2E", fg="#AAAAAA", font=("Arial", 9, "italic")).pack(anchor="w", pady=4)
+                tb.Label(dynamic_frame, text="👆 Selecciona una pregunta arriba", 
+                         bootstyle=SECONDARY, font=("Arial", 9, "italic")).pack(anchor="w", pady=4)
             
             # Botón regresar siempre disponible si no estamos en root
             if len(breadcrumb_trail) > 1:
-                back = ttk.Button(dynamic_frame, text="⬅ Regresar", command=go_back)
-                back.pack(pady=(3,0), fill="x")
+                back = tb.Button(dynamic_frame, text="⬅ Regresar", bootstyle=SECONDARY, command=go_back)
+                back.pack(pady=(3,0), fill=X)
                 
-    root.update_idletasks()
+    app.update_idletasks()
 
 def go_back():
     global current_node, breadcrumb_trail
@@ -313,7 +299,7 @@ def process_selection(selected):
     # Si estamos en speller, append al entry
     if current_mode == "speller":
         cur = prompt_text.get()
-        prompt_text.delete(0, tk.END)
+        prompt_text.delete(0, END)
         prompt_text.insert(0, cur + selected)
         return
     # graph mode selection
@@ -366,8 +352,8 @@ def send_selected_question_to_chat(question):
     # Mostrar en el chat display
     chat_display.tag_configure("user", foreground="#4CAF50")
     chat_display.tag_configure("ai", foreground="#BBBBBB")
-    chat_display.insert(tk.END, f"You: {question}\n", "user")
-    chat_display.see(tk.END)
+    chat_display.insert(END, f"You: {question}\n", "user")
+    chat_display.see(END)
     
     # Enviar a la API en un thread separado
     threading.Thread(target=send_question_thread, args=(question,), daemon=True).start()
@@ -382,11 +368,11 @@ def send_question_thread(question):
     # Actualizar UI desde el hilo principal
     def update_chat():
         chat_display.tag_configure("ai", foreground="#BBBBBB")
-        chat_display.insert(tk.END, f"\n{'='*60}\n\n", "ai")
-        chat_display.see(tk.END)
+        chat_display.insert(END, f"\n{'='*60}\n\n", "ai")
+        chat_display.see(END)
         update_status("✓ Respuesta recibida. Puedes hacer otra pregunta.")
     
-    root.after(0, update_chat)
+    app.after(0, update_chat)
 
 # ----------------- Generación de preguntas (IA o fallback) -----------------
 def on_generate_questions():
@@ -432,7 +418,7 @@ def generate_concepts_thread(blended_keywords):
         print("Error generando conceptos:", e)
         concepts = fallback_generate_concepts(blended_keywords)
     # Ir directamente a generar preguntas sin mostrar selección de conceptos
-    root.after(0, lambda: generate_initial_questions_direct(blended_keywords))
+    app.after(0, lambda: generate_initial_questions_direct(blended_keywords))
 
 def generate_initial_questions_thread(keyword):
     """
@@ -450,8 +436,8 @@ def generate_initial_questions_thread(keyword):
     decision_tree["root"]["options"] = suggestions
     decision_tree["root"]["next"] = {opt: {"options": [], "next": {}} for opt in suggestions}
     
-    # Usar root.after para actualizar UI desde el thread principal
-    root.after(0, lambda: finish_question_generation(keyword))
+    # Usar app.after para actualizar UI desde el thread principal
+    app.after(0, lambda: finish_question_generation(keyword))
 
 def generate_initial_questions_direct(keyword):
     """
@@ -514,7 +500,7 @@ def generate_more_questions_thread(selected_option):
     node["options"] = node_options
     
     # Actualizar UI desde el hilo principal
-    root.after(0, lambda: finish_more_questions())
+    app.after(0, lambda: finish_more_questions())
 
 def finish_more_questions():
     """
@@ -659,18 +645,18 @@ def suggest_auto_completion(event=None):
         suggestion_list.pack_forget()
         return
     matches = [s for s in common_suggestions if s.lower().startswith(text)]
-    suggestion_list.delete(0, tk.END)
+    suggestion_list.delete(0, END)
     for m in matches[:8]:
-        suggestion_list.insert(tk.END, m)
+        suggestion_list.insert(END, m)
     if matches:
-        suggestion_list.pack(fill="x", pady=2)
+        suggestion_list.pack(fill=X, pady=2)
     else:
         suggestion_list.pack_forget()
 
 def select_suggestion(event):
     if suggestion_list.curselection():
         sel = suggestion_list.get(suggestion_list.curselection())
-        prompt_text.delete(0, tk.END)
+        prompt_text.delete(0, END)
         prompt_text.insert(0, sel)
         suggestion_list.pack_forget()
 
@@ -765,9 +751,9 @@ def send_to_chat_api(prompt):
                 if piece:
                     full_response += piece
                     chat_display.tag_configure("ai", foreground="#BBBBBB")
-                    chat_display.insert(tk.END, piece, "ai")
-                    chat_display.see(tk.END)
-                    root.update()
+                    chat_display.insert(END, piece, "ai")
+                    chat_display.see(END)
+                    app.update()
         except Exception:
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -796,8 +782,8 @@ def reset_all():
     breadcrumb_trail = ["Root"]
     current_mode = "speller"
     mode_var.set(0)
-    prompt_text.delete(0, tk.END)
-    chat_display.delete("1.0", tk.END)
+    prompt_text.delete(0, END)
+    chat_display.delete("1.0", END)
     update_status("Reset completado.")
     create_dynamic_interface()
 
@@ -806,6 +792,6 @@ create_dynamic_interface()
 
 # Ejecutar mainloop
 try:
-    root.mainloop()
+    app.mainloop()
 except Exception as e:
     print("Error mainloop:", e)
