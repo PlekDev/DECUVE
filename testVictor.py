@@ -295,11 +295,12 @@ def send_to_chat_api(prompt):
     full_response = ""
     try:
         stream = client.chat.completions.create(
-            model="llama3-8b-8192",  # Fast free model on Groq
+            model="openai/gpt-oss-120b",  # Fast free model on Groq
             messages=conversation_history,
             stream=True,
             temperature=0.7,
-            max_tokens=500
+            max_tokens=500,
+            max_completion_tokens=500
         )
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
