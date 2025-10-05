@@ -1,80 +1,77 @@
-# 🧠 Connect Your Brain to ChatGPT
 
-**Proyecto del Hackathon – “Fuerza Grupera: Conecta tu cabeza con ChatGPT”**
+# 🧠 BCI Chat Interface with Groq (Tkinter & EEG)
+
+**Proyecto del Hackathon – “Fuerza Grupera: Conecta tu cabeza con la IA”**
 
 ## 🚀 Descripción
 
-**Connect Your Brain to ChatGPT** busca crear una interfaz directa entre el cerebro humano y ChatGPT, utilizando el dispositivo **Unicorn Hybrid Black** para interpretar las ondas cerebrales y traducirlas en comandos comprensibles para el modelo de lenguaje.
-El objetivo es permitir la comunicación y el control de ChatGPT usando solo la actividad cerebral, convirtiendo al usuario en una especie de “superhumano” que puede acceder al conocimiento y asistencia de la IA sin necesidad de interacción física.
+**BCI Chat Interface with Groq** es una prueba de concepto para crear una interfaz de comunicación alternativa (BCI) utilizando la biblioteca **Tkinter** para la UI, simulación de señales cerebrales (o un dispositivo EEG como Unicorn Hybrid Black) y el modelo de lenguaje **Groq** para generar contenido.
+
+El objetivo es simular un sistema de comunicación asistida donde el usuario puede interactuar con una IA avanzada:
+1.  **Tecleando** letra por letra (Speller).
+2.  **Seleccionando preguntas** y conceptos sugeridos por la IA (Graph).
+
+La interacción simula la selección por **atención o permanencia** de 3 segundos, ideal para personas con movilidad reducida.
 
 ---
 
-## ⚙️ Especificaciones de hardware y software
+## ⚙️ Especificaciones de Software y Dependencias
 
-* **Hardware:** Unicorn Hybrid Black (NeuroTech)
-* **Software:**
+| Componente | Uso Principal | Instalación (Python) |
+| :--- | :--- | :--- |
+| **Tkinter** | Interfaz Gráfica (GUI) | (Incluido en Python) |
+| **Groq SDK** | Interacción con modelos de lenguaje (Llama 3.3) | `pip install groq` |
+| **Pylsl** (Opcional) | Adquisición de datos de EEG/Marcadores (LSL) | `pip install pylsl` |
+| **Threading** | Ejecución de tareas de IA y simulación en segundo plano. | (Librería estándar) |
 
-  * Unicorn Suite (para adquisición de señales cerebrales)
-  * Python (procesamiento e integración con ChatGPT)
-  * OpenAI API (interacción con el modelo de lenguaje)
-  * Herramientas de accesibilidad y control por teclado
+### ⚠️ Modo de Funcionamiento (Debug vs. Real)
 
----
+El código incluye un **modo Debug (simulación)** por defecto que:
+1.  Simula la lectura de EEG con **datos aleatorios**.
+2.  Simula la selección de botones (clics) de la interfaz cada **1.2 segundos**.
 
-## 🧩 Flujo del sistema
-
-### 1. Conexión inicial
-
-* Conectar el **Unicorn Hybrid Black** al sistema.
-* El dispositivo interpreta las **ondas cerebrales** y las envía como datos al programa.
-
-### 2. Procesamiento de entradas
-
-* Las señales son interpretadas como **inputs** para ChatGPT.
-* El sistema permite seleccionar opciones mediante atención o permanencia durante **3 segundos**.
-* Si se mantiene la concentración, la opción se activa.
-
-### 3. Interacción con ChatGPT
-
-* El usuario puede navegar entre opciones o enviar comandos usando señales cerebrales.
-* Se implementan métodos de **accesibilidad** para moverse entre menús o confirmar acciones.
+Para el uso con hardware real (como Unicorn Hybrid Black), se requiere la configuración de las librerías EEG y la implementación de una función `detect_p300` efectiva.
 
 ---
 
-## 🧠 Pruebas y evaluación
+## 🧩 Flujo del Sistema
 
-Durante el **test de uso**, se evaluaron los siguientes aspectos:
+El programa opera en dos modos de entrada principales, con la generación de contenido a cargo de Groq:
 
-* ¿Es cansado para el usuario?
-* ¿Es útil en la práctica?
-* Casos en los que representa una **solución real** (por ejemplo, accesibilidad o comunicación alternativa).
+### 1. Modo Speller (Teclado Virtual)
+* Muestra un **grid de caracteres** (letras, números, puntuación).
+* El usuario "selecciona" caracteres para escribir una palabra clave en el campo de texto.
+* En modo Debug, un botón aleatorio es "seleccionado" automáticamente.
 
----
+### 2. Modo Graph (Navegación por Preguntas Sugeridas)
+* El usuario introduce **palabras clave**.
+* El programa utiliza el modelo **Llama 3.3 de Groq** para generar una lista de **preguntas cortas** sobre los temas introducidos.
+* El usuario selecciona una pregunta de la lista.
+* La pregunta seleccionada se envía al chat de la IA para obtener una respuesta detallada.
 
-## 🧰 Herramientas utilizadas
-
-* **Lenguaje:** Python
-
-  <a href="https://github.com/search?q=user%3ADenverCoder1+is%3Arepo+language%3Apython"><img alt="Python" src="https://img.shields.io/badge/Python%20-%2314354C.svg?logo=python&logoColor=white"></a>
-
-* **Bibliotecas:**
-
-  * Unicorn Black SDK
-    
-    <img width="474" height="316" alt="image" src="https://github.com/user-attachments/assets/1feae856-1e0b-4a4f-bb92-57bb11031353" />
-
-  * OpenAI API
-  * Librerías de accesibilidad y manejo de interfaces
+### 3. Interacción con Groq API
+* Todas las sugerencias de preguntas (`Generar Preguntas`) y las respuestas finales (`Enviar esta pregunta al Chat`) son procesadas por la API de Groq, optimizada para la velocidad.
+* Se mantiene un **historial de conversación** para que la IA dé respuestas contextuales.
 
 ---
 
-## 💡 Posibles aplicaciones
+## 🔑 Configuración de la API
 
-* Asistencia a personas con movilidad reducida o discapacidades motoras.
-* Experimentos de interacción cerebro-computadora (BCI).
-* Interfaces avanzadas para educación, creatividad o productividad.
+La API Key de Groq se puede configurar de tres maneras (la opción 1 es la predeterminada en el archivo `main.py`):
+1.  **Directamente en el código** (Variable `GROQ_API_KEY`).
+2.  Mediante un archivo `key.ini` (comentado por defecto).
+3.  Mediante una variable de entorno.
+
+También se puede configurar directamente desde el **botón "Configurar API Key"** en la interfaz.
 
 ---
 
-## 👥 Equipo
+## 💡 Posibles Aplicaciones
+
+* **Accesibilidad y Comunicación Alternativa:** Permitir a personas con discapacidades motoras generar preguntas y comunicarse con una IA de manera más eficiente que la escritura letra por letra.
+* **Investigación BCI:** Plataforma de prueba y desarrollo para la integración de señales cerebrales (P300 o SSVEP) en interfaces conversacionales.
+* **Generación de Contenido Rápida:** Obtener un árbol de preguntas sobre un tema para explorar conceptos de manera guiada.
+
+---
+
 
