@@ -54,9 +54,15 @@ Durante el **test de uso**, se evaluaron los siguientes aspectos:
 ## 🧰 Herramientas utilizadas
 
 * **Lenguaje:** Python
+
+  <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/fed80e63-08d1-44ef-bef8-8dfd0e156731" />
+
 * **Bibliotecas:**
 
   * Unicorn Black SDK
+    
+    <img width="474" height="316" alt="image" src="https://github.com/user-attachments/assets/1feae856-1e0b-4a4f-bb92-57bb11031353" />
+
   * OpenAI API
   * Librerías de accesibilidad y manejo de interfaces
 
