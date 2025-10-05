@@ -18,23 +18,39 @@ except Exception:
     StreamInfo = StreamOutlet = StreamInlet = resolve_stream = None
 
 # --------- CARGA DE API KEY ----------
-try:
-    config = configparser.ConfigParser()
-    config.read("key.ini")
-    api_key = config["keys"]["key"]
-except Exception as e:
-    print(f"Error reading key.ini: {e}")
-    api_key = ""
+# OPCIÓN 1: Poner tu API key directamente aquí (recomendado para testing)
+GROQ_API_KEY = " "  # <-- Pon tu API key aquí
 
-# Inicializa cliente Groq si está disponible
-if Groq is not None:
-    try:
-        client = Groq(api_key=api_key)
-    except Exception as e:
-        print(f"Groq client init error: {e}")
-        client = None
-else:
+# OPCIÓN 2: Leer desde archivo key.ini (comentar OPCIÓN 1 si usas esta)
+# try:
+#     config = configparser.ConfigParser()
+#     config.read("key.ini")
+#     GROQ_API_KEY = config["keys"]["key"]
+# except Exception as e:
+#     print(f"Error reading key.ini: {e}")
+#     GROQ_API_KEY = ""
+
+# OPCIÓN 3: Usar variable de entorno (más seguro para producción)
+# import os
+# GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
+# Validar que tengamos una API key
+if not GROQ_API_KEY or len(GROQ_API_KEY) < 10:
+    print("⚠️ WARNING: No se encontró una API key válida de Groq")
+    print("Por favor configura tu API key en el código (variable GROQ_API_KEY)")
     client = None
+else:
+    # Inicializa cliente Groq si está disponible
+    if Groq is not None:
+        try:
+            client = Groq(api_key=GROQ_API_KEY)
+            print("✓ Cliente Groq inicializado correctamente")
+        except Exception as e:
+            print(f"❌ Groq client init error: {e}")
+            client = None
+    else:
+        print("⚠️ Módulo 'groq' no está instalado. Usa: pip install groq")
+        client = None
 
 # --------- Estado global ----------
 conversation_history = []  # historial para API si se necesita
@@ -91,6 +107,56 @@ ttk.Radiobutton(right_frame, text="Graph (sugerencias)", variable=mode_var, valu
 debug_var = IntVar(value=1)
 ttk.Checkbutton(right_frame, text="Debug (simulación clics)", variable=debug_var, command=lambda: toggle_debug()).pack(fill="x", pady=6)
 
+# API Key configuration
+api_frame = tk.LabelFrame(right_frame, text="Configuración API", bg="#2E2E2E", fg="white")
+api_frame.pack(fill="x", pady=6)
+
+api_status = ttk.Label(api_frame, text="API: No configurada" if not client else "API: ✓ Conectada", 
+                       foreground="red" if not client else "green", background="#2E2E2E")
+api_status.pack(pady=4)
+
+def open_api_config():
+    api_window = tk.Toplevel(root)
+    api_window.title("Configurar API Key de Groq")
+    api_window.geometry("500x250")
+    api_window.configure(bg="#2E2E2E")
+    
+    tk.Label(api_window, text="Ingresa tu API Key de Groq:", 
+             bg="#2E2E2E", fg="white", font=("Arial", 12)).pack(pady=10)
+    
+    api_entry = ttk.Entry(api_window, width=50, font=("Arial", 10))
+    api_entry.pack(pady=10)
+    api_entry.insert(0, GROQ_API_KEY if GROQ_API_KEY else "")
+    
+    tk.Label(api_window, text="Obtén tu API key gratuita en:\nhttps://console.groq.com/keys", 
+             bg="#2E2E2E", fg="#4CAF50", font=("Arial", 9)).pack(pady=5)
+    
+    def save_api_key():
+        global GROQ_API_KEY, client
+        new_key = api_entry.get().strip()
+        if not new_key or len(new_key) < 10:
+            messagebox.showerror("Error", "API key inválida")
+            return
+        
+        GROQ_API_KEY = new_key
+        
+        # Intentar inicializar cliente
+        try:
+            if Groq is not None:
+                client = Groq(api_key=GROQ_API_KEY)
+                api_status.config(text="API: ✓ Conectada", foreground="green")
+                messagebox.showinfo("Éxito", "API Key configurada correctamente")
+                api_window.destroy()
+            else:
+                messagebox.showerror("Error", "Módulo 'groq' no instalado.\nUsa: pip install groq")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al conectar con Groq:\n{e}")
+    
+    ttk.Button(api_window, text="Guardar y Conectar", command=save_api_key).pack(pady=10)
+    ttk.Button(api_window, text="Cancelar", command=api_window.destroy).pack()
+
+ttk.Button(api_frame, text="Configurar API Key", command=open_api_config).pack(pady=4)
+
 ttk.Label(right_frame, text="Palabra clave / Concepto (keywords separadas por comas):").pack(anchor="w")
 prompt_text = ttk.Entry(right_frame, width=40, font=("Arial", 12))
 prompt_text.pack(pady=6)
@@ -138,7 +204,7 @@ def switch_mode():
     current_node = decision_tree["root"]
     breadcrumb_trail = ["Root"]
     instruction = "Teclea o usa autocompletado (Speller)" if current_mode == "speller" else "Introduce palabras clave y pulsa 'Generar Preguntas'"
-    update_status(f"Modo: {current_mode} — {instruction}")
+    update_status(f"Modo: {current_mode} – {instruction}")
     create_dynamic_interface()
 
 def toggle_debug():
@@ -168,19 +234,46 @@ def create_dynamic_interface():
                     buttons.append(b)
     else:
         # Mostrar ruta (breadcrumb)
-        tk.Label(dynamic_frame, text=f"Ruta: {' > '.join(breadcrumb_trail)}", bg="#2E2E2E", fg="white", font=("Arial", 10)).pack(anchor="w", pady=(0,6))
+        breadcrumb_label = tk.Label(dynamic_frame, text=f"📍 Ruta: {' > '.join(breadcrumb_trail)}", 
+                                    bg="#2E2E2E", fg="#4CAF50", font=("Arial", 10, "bold"))
+        breadcrumb_label.pack(anchor="w", pady=(0,8))
+        
         # Mostrar opciones del nodo actual
         opts = current_node.get("options", [])
         if not opts:
-            tk.Label(dynamic_frame, text="No hay preguntas generadas. Introduce palabras clave y pulsa 'Generar Preguntas'.", bg="#2E2E2E", fg="#BBBBBB", wraplength=320, justify="left").pack(anchor="w")
+            tk.Label(dynamic_frame, text="❌ No hay preguntas generadas", 
+                    bg="#2E2E2E", fg="#FF5555", font=("Arial", 11, "bold")).pack(anchor="w", pady=4)
+            tk.Label(dynamic_frame, text="Introduce palabras clave arriba y\npulsa 'Generar Preguntas'", 
+                    bg="#2E2E2E", fg="#BBBBBB", font=("Arial", 10), justify="left").pack(anchor="w", pady=2)
         else:
+            # Instrucción
+            tk.Label(dynamic_frame, text="💡 Haz clic en '→ Chat' para preguntar directamente,\no selecciona para navegar:", 
+                    bg="#2E2E2E", fg="#FFEB3B", font=("Arial", 9), wraplength=320, justify="left").pack(anchor="w", pady=(0,8))
             for opt in opts:
-                b = ttk.Button(dynamic_frame, text=opt, width=40, command=(lambda o=opt: process_selection(o)) if debug_mode else None)
-                b.pack(pady=3)
+                btn_frame = tk.Frame(dynamic_frame, bg="#2E2E2E")
+                btn_frame.pack(pady=3, fill="x")
+                
+                # Botón principal de la pregunta
+                b = ttk.Button(btn_frame, text=opt, width=35, 
+                              command=(lambda o=opt: process_selection(o)) if debug_mode else None)
+                b.pack(side="left", padx=(0,2))
                 buttons.append(b)
+                
+                # Botón rápido para enviar al chat
+                send_quick = ttk.Button(btn_frame, text="→ Chat", width=8,
+                                       command=lambda o=opt: send_selected_question_to_chat(o))
+                send_quick.pack(side="left")
+            
+            # Separador
+            tk.Frame(dynamic_frame, height=2, bg="#555555").pack(fill="x", pady=8)
+            
+            # Botón para enviar la selección actual al chat
+            send_btn = ttk.Button(dynamic_frame, text="✉ Enviar Selección Actual al Chat", 
+                                 command=send_current_question_to_chat)
+            send_btn.pack(pady=(0,3), fill="x")
             # Continue / Back
             cont = ttk.Button(dynamic_frame, text="Continuar (Generar más a partir de la selección)", command=generate_more_questions)
-            cont.pack(pady=(8,3))
+            cont.pack(pady=(3,3))
             if len(breadcrumb_trail) > 1:
                 back = ttk.Button(dynamic_frame, text="Regresar", command=go_back)
                 back.pack(pady=(0,3))
@@ -217,27 +310,62 @@ def process_selection(selected):
         current_node["next"].setdefault(selected, {"options": [], "next": {}})
         current_node = current_node["next"][selected]
         breadcrumb_trail.append(selected)
-    # Si el nodo tiene un prompt (pregunta final), rellenarlo en la entrada
-    if "prompt" in current_node:
-        # Get the final prompt
-        current_prompt = current_node["prompt"]
-
-        # Display and send to the chat AI
-        status_label.config(text="Status: Sending to Groq...")
-        chat_display.tag_configure("user", foreground="#4CAF50")
-        chat_display.tag_configure("ai", foreground="#BBBBBB")
-        chat_display.insert(tk.END, f"You: {current_prompt}\n", "user")
-        response = send_to_chat_api(current_prompt)
-        chat_display.insert(tk.END, f"AI: {response}\n\n", "ai")
-        chat_display.see(tk.END)
-
-        # Reset to root after sending
-        current_node = decision_tree["root"]
-        breadcrumb_trail = ["Root"]
-        create_dynamic_interface()
-        status_label.config(text="Status: Ready")
-        return
+    
     create_dynamic_interface()
+    update_status(f"✓ Seleccionado: {selected[:50]}...")
+
+def send_current_question_to_chat():
+    """
+    Envía la pregunta/concepto actual (última en breadcrumb) al chat.
+    """
+    if len(breadcrumb_trail) <= 1:
+        messagebox.showinfo("Info", "Selecciona primero una pregunta o concepto para enviar al chat.")
+        return
+    
+    # Tomar la última selección del breadcrumb como la pregunta
+    current_question = breadcrumb_trail[-1]
+    send_selected_question_to_chat(current_question)
+
+def send_selected_question_to_chat(question):
+    """
+    Envía una pregunta específica al chat.
+    """
+    # Validar que tengamos API
+    if client is None:
+        response = messagebox.askyesno(
+            "API No Configurada",
+            "No hay una API key de Groq configurada.\n\n"
+            "¿Deseas configurarla ahora para obtener respuestas reales?\n\n"
+            "(Si seleccionas 'No', se usará una respuesta simulada)"
+        )
+        if response:
+            open_api_config()
+            return
+    
+    # Mostrar en el chat display
+    chat_display.tag_configure("user", foreground="#4CAF50")
+    chat_display.tag_configure("ai", foreground="#BBBBBB")
+    chat_display.insert(tk.END, f"You: {question}\n", "user")
+    chat_display.see(tk.END)
+    
+    # Enviar a la API en un thread separado
+    threading.Thread(target=send_question_thread, args=(question,), daemon=True).start()
+
+def send_question_thread(question):
+    """
+    Thread para enviar la pregunta al chat API y mostrar la respuesta.
+    """
+    update_status("⏳ Enviando pregunta a Groq...")
+    response = send_to_chat_api(question)
+    
+    # Actualizar UI desde el hilo principal
+    def update_chat():
+        chat_display.tag_configure("ai", foreground="#BBBBBB")
+        chat_display.insert(tk.END, f"\n{'='*60}\n\n", "ai")
+        chat_display.see(tk.END)
+        update_status("✓ Respuesta recibida. Puedes hacer otra pregunta.")
+    
+    root.after(0, update_chat)
 
 # ----------------- Generación de preguntas (IA o fallback) -----------------
 def on_generate_questions():
@@ -245,6 +373,18 @@ def on_generate_questions():
     Acción cuando el usuario pulsa 'Generar Preguntas': tomar las palabras clave
     y pedir a la IA preguntas básicas. Acepta múltiples keywords separadas por comas.
     """
+    # Validar que tengamos API key configurada
+    if client is None:
+        response = messagebox.askyesno(
+            "API No Configurada",
+            "No hay una API key de Groq configurada.\n\n"
+            "¿Deseas configurarla ahora?\n\n"
+            "(Si seleccionas 'No', se usarán preguntas de ejemplo)"
+        )
+        if response:
+            open_api_config()
+            return
+    
     raw = prompt_text.get().strip()
     if not raw:
         messagebox.showwarning("Atención", "Introduce al menos una palabra clave o frase corta.")
@@ -265,10 +405,8 @@ def generate_concepts_thread(blended_keywords):
     except Exception as e:
         print("Error generando conceptos:", e)
         concepts = fallback_generate_concepts(blended_keywords)
-    # Mostrar las sugerencias de conceptos para que el usuario elija
-    decision_tree["root"]["options"] = []
-    decision_tree["root"]["next"] = {}
-    show_concept_selection(concepts, blended_keywords)
+    # Ir directamente a generar preguntas sin mostrar selección de conceptos
+    root.after(0, lambda: generate_initial_questions_direct(blended_keywords))
 
 def generate_initial_questions_thread(keyword):
     """
@@ -281,16 +419,35 @@ def generate_initial_questions_thread(keyword):
     except Exception as e:
         print(f"Error generando preguntas: {e}")
         suggestions = fallback_generate_questions(keyword)
+    
     # Poblamos el decision_tree root con opciones
     decision_tree["root"]["options"] = suggestions
     decision_tree["root"]["next"] = {opt: {"options": [], "next": {}} for opt in suggestions}
-    # Reiniciar navegación
+    
+    # Usar root.after para actualizar UI desde el thread principal
+    root.after(0, lambda: finish_question_generation(keyword))
+
+def generate_initial_questions_direct(keyword):
+    """
+    Versión que se ejecuta directamente desde el hilo principal.
+    """
+    threading.Thread(target=generate_initial_questions_thread, args=(keyword,), daemon=True).start()
+
+def finish_question_generation(keyword):
+    """
+    Finaliza la generación de preguntas y actualiza la UI.
+    Debe ejecutarse en el hilo principal de Tkinter.
+    """
     global current_node, breadcrumb_trail, current_mode
+    
+    # Reiniciar navegación
     current_node = decision_tree["root"]
     breadcrumb_trail = ["Root"]
+    
     # Cambiar a modo graph para mostrar opciones
     current_mode = "graph"
     mode_var.set(1)
+    
     update_status(f"Preguntas generadas para '{keyword}'. Elige una.")
     create_dynamic_interface()
 
@@ -322,6 +479,14 @@ def generate_more_questions_thread(selected_option):
             node_options.append(s)
             node["next"].setdefault(s, {"options": [], "next": {}})
     node["options"] = node_options
+    
+    # Actualizar UI desde el hilo principal
+    root.after(0, lambda: finish_more_questions())
+
+def finish_more_questions():
+    """
+    Finaliza la generación de más preguntas y actualiza la UI.
+    """
     update_status("Más preguntas generadas. Revisa las opciones.")
     create_dynamic_interface()
 
@@ -336,7 +501,7 @@ def generate_concepts_from_keywords(keywords):
             system_msg = "Eres un asistente que genera conceptos o temas relacionados con una lista de palabras clave. Devuelve solo una lista corta, sin numerar ni explicaciones, en español."
             user_msg = f"Palabras clave: {keywords}. Devuelve entre 5 y 8 temas o conceptos relacionados, separados por saltos de línea."
             resp = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg}
@@ -392,7 +557,7 @@ def generate_questions_from_keyword(keyword, context="initial"):
     if client is not None:
         try:
             resp = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg}
@@ -444,47 +609,12 @@ def fallback_generate_more(selected_option):
         f"Casos de uso de {selected_option}"
     ]
 
-# ----------------- Concept selection UI -----------------
+# ----------------- Concept selection UI (SIMPLIFICADA) -----------------
 def show_concept_selection(concepts, keywords):
-    for w in dynamic_frame.winfo_children():
-        w.destroy()
-    ttk.Label(dynamic_frame, text=f"Conceptos sugeridos para: {keywords}", background="#2E2E2E", foreground="white").pack(anchor="w", pady=4)
-    selected_concepts = []
-
-    def toggle_concept(concept, chk_var):
-        if chk_var.get():
-            if concept not in selected_concepts:
-                selected_concepts.append(concept)
-        else:
-            if concept in selected_concepts:
-                selected_concepts.remove(concept)
-
-    # Mostrar cada concepto con un Checkbutton
-    chk_vars = []
-    for c in concepts:
-        v = tk.IntVar(value=0)
-        chk = ttk.Checkbutton(dynamic_frame, text=c, variable=v, command=lambda c=c, v=v: toggle_concept(c, v))
-        chk.pack(anchor="w", padx=2, pady=2)
-        chk_vars.append(v)
-
-    def confirm_selection():
-        if not selected_concepts:
-            messagebox.showinfo("Info", "Selecciona al menos un concepto para generar preguntas.")
-            return
-        combo = ", ".join(selected_concepts)
-        prompt_text.delete(0, tk.END)
-        prompt_text.insert(0, combo)
-        # Generar preguntas a partir de la selección combinada
-        threading.Thread(target=generate_initial_questions_thread, args=(combo,), daemon=True).start()
-
-    def add_more_keywords():
-        prompt_text.focus_set()
-
-    btn_frame = tk.Frame(dynamic_frame, bg="#2E2E2E")
-    btn_frame.pack(fill="x", pady=6)
-    ttk.Button(btn_frame, text="Confirmar selección y generar preguntas", command=confirm_selection).pack(side="left", padx=2)
-    ttk.Button(btn_frame, text="Agregar más palabras clave", command=add_more_keywords).pack(side="left", padx=2)
-    root.update_idletasks()
+    """
+    FUNCIÓN REMOVIDA - Ahora se generan preguntas directamente
+    """
+    pass
 
 # ----------------- Autocompletado client-side -----------------
 def suggest_auto_completion(event=None):
@@ -580,15 +710,12 @@ def send_to_chat_api(prompt):
     full_response = ""
     if client is None:
         full_response = f"(Respuesta simulada para '{prompt}')"
-        chat_display.tag_configure("ai", foreground="#BBBBBB")
-        chat_display.insert(tk.END, f"AI: {full_response}\n\n", "ai")
-        chat_display.see(tk.END)
         conversation_history.append({"role": "assistant", "content": full_response})
         return full_response
     try:
         try:
             stream = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama-3.3-70b-versatile",
                 messages=conversation_history,
                 stream=True,
                 temperature=0.7,
@@ -607,7 +734,7 @@ def send_to_chat_api(prompt):
                     root.update()
         except Exception:
             resp = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama-3.3-70b-versatile",
                 messages=conversation_history,
                 stream=False,
                 temperature=0.7,
@@ -617,9 +744,6 @@ def send_to_chat_api(prompt):
                 full_response = resp.choices[0].message.content
             except Exception:
                 full_response = getattr(resp.choices[0], "text", str(resp))
-            chat_display.tag_configure("ai", foreground="#BBBBBB")
-            chat_display.insert(tk.END, f"AI: {full_response}\n\n", "ai")
-            chat_display.see(tk.END)
     except Exception as e:
         full_response = f"Error: {e}"
         messagebox.showerror("API Error", f"Fallo al conectar con Groq: {e}")
@@ -648,4 +772,4 @@ create_dynamic_interface()
 try:
     root.mainloop()
 except Exception as e:
-    print("GUI error:", e)
+    print("Error en mainloop:", e)
