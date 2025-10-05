@@ -1,0 +1,37 @@
+[33mcommit b32b443db970b5f90f42943b8efe7c857eb62ec3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Victor <victor.velazquez2210@gmail.com>
+Date:   Sun Oct 5 00:53:17 2025 -0600
+
+    fix: remove api key
+
+[33mcommit bef48849f663bd864f7296c5dcf19eca9882f154[m
+Author: Victor <victor.velazquez2210@gmail.com>
+Date:   Sun Oct 5 00:52:27 2025 -0600
+
+    add: add testVictor, graphic interface
+
+[33mcommit 2e72906e8beef67adf9aa18e6aba40f3ee4eb5ff[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: Diego Martin Lizarraga Sanchez <lizarragasanchezdiego@gmail.com>
+Date:   Sat Oct 4 23:22:27 2025 -0600
+
+    Update README.md
+
+[33mcommit 74d8245ce24068f5d33187b0d93e66f8ba1c0f87[m
+Author: Diego Martin Lizarraga Sanchez <lizarragasanchezdiego@gmail.com>
+Date:   Sat Oct 4 23:21:06 2025 -0600
+
+    Update README.md
+
+[33mcommit 845aecf399987b77b34ac5b825355255bfd232b0[m
+Author: Diego Martin Lizarraga Sanchez <lizarragasanchezdiego@gmail.com>
+Date:   Sat Oct 4 23:11:33 2025 -0600
+
+    Create README.md
+
+[33mcommit 1205fc7eb8d59ee70dd8f7c107e0a3c57082904b[m
+Author: Diego Martin Lizarraga Sanchez <lizarragasanchezdiego@gmail.com>
+Date:   Sat Oct 4 23:05:57 2025 -0600
+
+    Create main.py
+    
+    este es solo una base. no es algo concreto
