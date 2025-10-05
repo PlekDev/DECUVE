@@ -1,7 +1,7 @@
 
 # 🧠 BCI Chat Interface with Groq (Tkinter & EEG)
 
-**Proyecto del Hackathon – “Fuerza Grupera: Conecta tu cabeza con la IA”**
+**Proyecto del Hackathon – “DECUVE: Conecta tu cabeza con la IA”**
 
 ## 🚀 Descripción
 
