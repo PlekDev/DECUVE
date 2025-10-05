@@ -238,56 +238,79 @@ def create_dynamic_interface():
                                     bg="#2E2E2E", fg="#4CAF50", font=("Arial", 10, "bold"))
         breadcrumb_label.pack(anchor="w", pady=(0,8))
         
-        # Mostrar opciones del nodo actual
-        opts = current_node.get("options", [])
-        if not opts:
+        # Obtener opciones del nodo ROOT, no del nodo actual
+        root_opts = decision_tree["root"].get("options", [])
+        
+        if not root_opts:
             tk.Label(dynamic_frame, text="❌ No hay preguntas generadas", 
                     bg="#2E2E2E", fg="#FF5555", font=("Arial", 11, "bold")).pack(anchor="w", pady=4)
             tk.Label(dynamic_frame, text="Introduce palabras clave arriba y\npulsa 'Generar Preguntas'", 
                     bg="#2E2E2E", fg="#BBBBBB", font=("Arial", 10), justify="left").pack(anchor="w", pady=2)
         else:
             # Instrucción
-            tk.Label(dynamic_frame, text="💡 Haz clic en '→ Chat' para preguntar directamente,\no selecciona para navegar:", 
+            instruction_text = "Haz clic en una pregunta para seleccionarla"
+            tk.Label(dynamic_frame, text=instruction_text, 
                     bg="#2E2E2E", fg="#FFEB3B", font=("Arial", 9), wraplength=320, justify="left").pack(anchor="w", pady=(0,8))
-            for opt in opts:
-                btn_frame = tk.Frame(dynamic_frame, bg="#2E2E2E")
-                btn_frame.pack(pady=3, fill="x")
+            
+            # Mostrar preguntas del ROOT (las generadas inicialmente)
+            for opt in root_opts:
+                # Resaltar la pregunta si está seleccionada
+                is_selected = (len(breadcrumb_trail) > 1 and breadcrumb_trail[-1] == opt)
                 
-                # Botón principal de la pregunta
-                b = ttk.Button(btn_frame, text=opt, width=35, 
-                              command=(lambda o=opt: process_selection(o)) if debug_mode else None)
-                b.pack(side="left", padx=(0,2))
+                btn_style = ttk.Style()
+                if is_selected:
+                    b = ttk.Button(dynamic_frame, text=f"✓ {opt}", width=45, 
+                                  command=(lambda o=opt: process_selection(o)) if debug_mode else None)
+                else:
+                    b = ttk.Button(dynamic_frame, text=opt, width=45, 
+                                  command=(lambda o=opt: process_selection(o)) if debug_mode else None)
+                b.pack(pady=2)
                 buttons.append(b)
-                
-                # Botón rápido para enviar al chat
-                send_quick = ttk.Button(btn_frame, text="→ Chat", width=8,
-                                       command=lambda o=opt: send_selected_question_to_chat(o))
-                send_quick.pack(side="left")
             
             # Separador
             tk.Frame(dynamic_frame, height=2, bg="#555555").pack(fill="x", pady=8)
             
-            # Botón para enviar la selección actual al chat
-            send_btn = ttk.Button(dynamic_frame, text="✉ Enviar Selección Actual al Chat", 
-                                 command=send_current_question_to_chat)
-            send_btn.pack(pady=(0,3), fill="x")
-            # Continue / Back
-            cont = ttk.Button(dynamic_frame, text="Continuar (Generar más a partir de la selección)", command=generate_more_questions)
-            cont.pack(pady=(3,3))
+            # Mostrar sección de acciones solo si hay algo seleccionado
             if len(breadcrumb_trail) > 1:
-                back = ttk.Button(dynamic_frame, text="Regresar", command=go_back)
-                back.pack(pady=(0,3))
+                selected_text = breadcrumb_trail[-1]
+                
+                # Mostrar selección actual
+                selection_frame = tk.Frame(dynamic_frame, bg="#1E1E1E", relief="groove", borderwidth=2)
+                selection_frame.pack(fill="x", pady=(0,8), padx=4)
+                
+                tk.Label(selection_frame, text="Pregunta seleccionada:", 
+                        bg="#1E1E1E", fg="#4CAF50", font=("Arial", 9, "bold")).pack(anchor="w", padx=8, pady=(6,2))
+                tk.Label(selection_frame, text=f'"{selected_text}"', 
+                        bg="#1E1E1E", fg="white", font=("Arial", 9), wraplength=300, justify="left").pack(anchor="w", padx=8, pady=(0,6))
+                
+                # Botón para enviar la selección actual al chat
+                send_btn = ttk.Button(dynamic_frame, text="✉ Enviar esta pregunta al Chat", 
+                                     command=send_current_question_to_chat)
+                send_btn.pack(pady=(0,6), fill="x")
+                
+                # Botón para generar más preguntas
+                cont = ttk.Button(dynamic_frame, text="➕ Generar más preguntas relacionadas", command=generate_more_questions)
+                cont.pack(pady=(0,3), fill="x")
+            else:
+                # Mensaje si no hay selección
+                tk.Label(dynamic_frame, text="👆 Selecciona una pregunta arriba", 
+                        bg="#2E2E2E", fg="#AAAAAA", font=("Arial", 9, "italic")).pack(anchor="w", pady=4)
+            
+            # Botón regresar siempre disponible si no estamos en root
+            if len(breadcrumb_trail) > 1:
+                back = ttk.Button(dynamic_frame, text="⬅ Regresar", command=go_back)
+                back.pack(pady=(3,0), fill="x")
+                
     root.update_idletasks()
 
 def go_back():
     global current_node, breadcrumb_trail
     if len(breadcrumb_trail) > 1:
-        breadcrumb_trail.pop()
-        # reconstruir current_node desde root
+        # Volver al root
+        breadcrumb_trail = ["Root"]
         current_node = decision_tree["root"]
-        for step in breadcrumb_trail[1:]:
-            current_node = current_node["next"].get(step, decision_tree["root"])
         create_dynamic_interface()
+        update_status("Regresado al inicio")
 
 def process_selection(selected):
     global current_node, breadcrumb_trail
@@ -301,25 +324,27 @@ def process_selection(selected):
     if selected == "Custom":
         switch_mode()
         return
-    # si la selección existe en next, navega
-    if "next" in current_node and selected in current_node["next"]:
-        current_node = current_node["next"][selected]
-        breadcrumb_trail.append(selected)
-    else:
-        # Crear nuevo nodo para la selección si no existe
-        current_node["next"].setdefault(selected, {"options": [], "next": {}})
-        current_node = current_node["next"][selected]
-        breadcrumb_trail.append(selected)
     
+    # Resetear breadcrumb cuando se selecciona desde el root
+    breadcrumb_trail = ["Root", selected]
+    
+    # Navegar al nodo o crearlo si no existe
+    if selected in decision_tree["root"]["next"]:
+        current_node = decision_tree["root"]["next"][selected]
+    else:
+        decision_tree["root"]["next"][selected] = {"options": [], "next": {}}
+        current_node = decision_tree["root"]["next"][selected]
+    
+    # Actualizar interfaz para mostrar la selección
     create_dynamic_interface()
-    update_status(f"✓ Seleccionado: {selected[:50]}...")
+    update_status(f"✓ Pregunta seleccionada")
 
 def send_current_question_to_chat():
     """
     Envía la pregunta/concepto actual (última en breadcrumb) al chat.
     """
     if len(breadcrumb_trail) <= 1:
-        messagebox.showinfo("Info", "Selecciona primero una pregunta o concepto para enviar al chat.")
+        messagebox.showinfo("Información", "Primero selecciona una pregunta haciendo clic en ella.")
         return
     
     # Tomar la última selección del breadcrumb como la pregunta
@@ -394,6 +419,11 @@ def on_generate_questions():
     if not keywords:
         messagebox.showwarning("Atención", "Introduce al menos una palabra clave o frase corta.")
         return
+    
+    # DESHABILITAR BOTÓN
+    submit_button.config(state="disabled")
+    update_status("Generando preguntas...")
+    
     # Blend all keywords into a single topic string
     blended = ", ".join(keywords)
     threading.Thread(target=generate_concepts_thread, args=(blended,), daemon=True).start()
@@ -448,6 +478,9 @@ def finish_question_generation(keyword):
     current_mode = "graph"
     mode_var.set(1)
     
+    # REHABILITAR BOTÓN
+    submit_button.config(state="normal")
+    
     update_status(f"Preguntas generadas para '{keyword}'. Elige una.")
     create_dynamic_interface()
 
@@ -457,10 +490,14 @@ def generate_more_questions():
     Si no hay selección, se usa la última opción seleccionada en breadcrumb.
     """
     if len(breadcrumb_trail) <= 1:
-        messagebox.showinfo("Info", "Selecciona primero una pregunta o concepto para generar más variaciones.")
+        messagebox.showinfo("Información", "Primero selecciona una pregunta haciendo clic en ella.\nLuego podrás generar preguntas relacionadas.")
         return
     last = breadcrumb_trail[-1]
-    update_status(f"Generando más preguntas basadas en: {last} ...")
+    
+    # DESHABILITAR BOTÓN mientras procesa
+    submit_button.config(state="disabled")
+    
+    update_status(f"Generando más preguntas basadas en: {last[:30]}...")
     threading.Thread(target=generate_more_questions_thread, args=(last,), daemon=True).start()
 
 def generate_more_questions_thread(selected_option):
@@ -487,6 +524,9 @@ def finish_more_questions():
     """
     Finaliza la generación de más preguntas y actualiza la UI.
     """
+    # REHABILITAR BOTÓN
+    submit_button.config(state="normal")
+    
     update_status("Más preguntas generadas. Revisa las opciones.")
     create_dynamic_interface()
 
