@@ -122,7 +122,7 @@ def listen_speller():
                             if string_val is not None:
                                 strings_found_debug.append(string_val)
                                 display = string_val if len(string_val) <= 30 else string_val[:30] + "..."
-                                print(f"      [{len(strings_found_debug)}] '{display}'")
+                                print(f"[{len(strings_found_debug)}] '{display}'")
                     
                     # Concatenar el tercer string al fin_final si existe
                     if len(strings_found_debug) >= 3:
