@@ -17,7 +17,7 @@
 
 ## 📋 Overview
 
-**BCI Chat Interface with Groq** is an innovative Augmentative and Alternative Communication (AAC) solution that combines brain-computer interfaces with cutting-edge artificial intelligence. The system enables users with reduced mobility to interact with advanced language models through two complementary modalities:
+**BCI Chat Interface with a chat api** is an innovative Augmentative and Alternative Communication (AAC) solution that combines brain-computer interfaces with cutting-edge artificial intelligence. The system enables users with reduced mobility to interact with advanced language models through two complementary modalities:
 
 ### 🎯 Interaction Modes
 
@@ -31,7 +31,7 @@
    - Dynamic decision tree
    - Simplified numeric selection (1-9)
 
-The system uses Groq's **Llama 3.3 70B** model for natural language processing with ultra-low latency (~500ms), optimized for real-time applications.
+The system uses Groq's **Llama 3.3 70B** model for natural language processing with ultra-low latency (~500ms), optimized for real-time applications. (in this example case)
 
 ---
 
@@ -44,7 +44,7 @@ The system uses Groq's **Llama 3.3 70B** model for natural language processing w
 - Advanced character filtering with Unicode validation
 
 ### 🤖 Advanced Artificial Intelligence
-- **AI Engine**: Groq API with Llama 3.3 70B Versatile model
+- **AI Engine**: API with Versatile model
 - **Contextual generation**: Up to 9 relevant questions per query
 - **Real-time streaming**: Progressive word-by-word responses
 - **Conversational history**: Context memory for coherent dialogues
