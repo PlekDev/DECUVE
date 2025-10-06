@@ -1,4 +1,4 @@
-# 🧠 BCI Chat Interface with Groq
+# 🧠 BCI Chat Interface with a API 
 
 <div align="center">
 
